@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Journey: Architecture Defense</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #171717;
+      --muted: #565656;
+      --line: #b8b8b8;
+      --paper: #fff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #eee;
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    main {
+      width: min(8.5in, 100%);
+      min-height: 11in;
+      margin: 24px auto;
+      padding: 0.55in 0.7in;
+      background: var(--paper);
+      box-shadow: 0 2px 16px rgb(0 0 0 / 10%);
+    }
+
+    h1 {
+      margin: 0;
+      text-align: center;
+      font-size: 27px;
+      line-height: 1.1;
+    }
+
+    .meta {
+      margin: 3px 0 22px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    h2 {
+      margin: 16px 0 4px;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    h3 {
+      margin: 8px 0 2px;
+      font-size: 14px;
+    }
+
+    p { margin: 0; }
+
+    ul {
+      margin: 2px 0 0;
+      padding-left: 18px;
+    }
+
+    li { margin: 1px 0; }
+
+    .diagram {
+      width: min(470px, 100%);
+      margin: 14px auto 6px;
+      text-align: center;
+    }
+
+    .node {
+      border: 1px solid var(--ink);
+      padding: 5px 12px;
+      line-height: 1.25;
+    }
+
+    .arrow {
+      height: 16px;
+      font-size: 17px;
+      line-height: 16px;
+    }
+
+    .cross-cutting {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .compact { margin-top: 1px; }
+
+    @media (max-width: 700px) {
+      body { background: var(--paper); }
+      main {
+        min-height: auto;
+        margin: 0;
+        padding: 28px 22px;
+        box-shadow: none;
+      }
+    }
+
+    @media print {
+      @page { size: Letter; margin: 0; }
+      body { background: var(--paper); }
+      main {
+        width: 8.5in;
+        height: 11in;
+        min-height: 0;
+        margin: 0;
+        padding: 0.55in 0.7in;
+        box-shadow: none;
+        overflow: hidden;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>JOURNEY: ARCHITECTURE DEFENSE</h1>
+      <p class="meta">Hamzah Ahmed &nbsp;|&nbsp; 24-Hour Hackathon</p>
+    </header>
+
+    <section>
+      <h2>GOAL</h2>
+      <p>Journey finds good places to visit for a destination and budget, then builds a personalized itinerary. Users refine the results through conversation until the plan matches their preferences.</p>
+    </section>
+
+    <section>
+      <h2>ARCHITECTURE</h2>
+      <div class="diagram" role="img" aria-label="Journey architecture flow">
+        <div class="node"><strong>Dash frontend</strong><br>trip input, results, preference feedback</div>
+        <div class="arrow">↓</div>
+        <div class="node"><strong>Flask agent loop + OpenAI</strong><br>context → model → tools → result → repeat</div>
+        <div class="arrow">↓</div>
+        <div class="node"><strong>Typed tools</strong><br>Nominatim | Overpass | place ranking</div>
+        <div class="arrow">↓</div>
+        <div class="node"><strong>Pydantic validation → MapLibre GL → browser storage</strong></div>
+        <p class="cross-cutting">Guardrails wrap every step &nbsp;|&nbsp; Structured traces record every call</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>FOUR PILLARS</h2>
+
+      <h3>1. CHAT / LOOP</h3>
+      <p>Build context from trip details and current preferences. Call OpenAI, execute requested tools, validate the result, and present it. Ask what the user wants changed, update preferences, and repeat. Stop when accepted or when a turn, time, or cost limit is reached.</p>
+
+      <h3>2. TOOLS</h3>
+      <ul class="compact">
+        <li><strong>locate_destination:</strong> resolve coordinates through Nominatim.</li>
+        <li><strong>find_nearby_places:</strong> retrieve attractions and restaurants through Overpass.</li>
+        <li><strong>rank_places:</strong> filter candidate places by budget, interests, distance, and reviews.</li>
+        <li><strong>save_trip:</strong> store the accepted plan in browser storage.</li>
+      </ul>
+      <p>Tools return small, typed results. OpenAI decides how to combine them; tools do not contain itinerary logic.</p>
+
+      <h3>3. GUARDRAILS</h3>
+      <ul class="compact">
+        <li><strong>Input:</strong> validate dates, travelers, budget, and text length.</li>
+        <li><strong>Actions:</strong> allow-list tools; apply timeouts, retries, rate limits, and a maximum loop count.</li>
+        <li><strong>Output:</strong> require Pydantic-validated JSON using only supplied places and valid trip dates.</li>
+        <li><strong>Safety:</strong> keep keys server-side and clearly identify the source of place data.</li>
+      </ul>
+
+      <h3>4. OBSERVABILITY</h3>
+      <p>Record one trace per planning session: OpenAI/tool latency, token cost, tool errors, retries, schema failures, refinement turns, and final acceptance.</p>
+    </section>
+
+    <section>
+      <h2>TRADEOFFS</h2>
+      <p>Dash provides the interactive Python UI and runs on Flask. Pydantic validates tool inputs and AI output. The design accepts browser-only storage, incomplete public place data, and variable AI output. Its boundaries provide a path to richer place providers and permanent storage later.</p>
+    </section>
+  </main>
+</body>
+</html>
