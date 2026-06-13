@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: journey-harness
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:server --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: JOURNEY_WORKER
+        value: deterministic
+      - key: MAX_REPAIR_ATTEMPTS
+        value: 1
+      - key: MAX_REFINEMENT_TURNS
+        value: 3
+      - key: MAX_CANDIDATE_PLACES
+        value: 12
+      - key: MAX_TRIP_DAYS
+        value: 3
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: OPENAI_API_KEY
+        sync: false
+    healthCheckPath: /
